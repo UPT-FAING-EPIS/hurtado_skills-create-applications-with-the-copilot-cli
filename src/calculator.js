@@ -7,6 +7,9 @@
  * - subtraction (-)
  * - multiplication (*)
  * - division (/)
+ * - modulo (%)
+ * - exponentiation/power (^)
+ * - square root (sqrt)
  */
 
 const operationAliases = {
@@ -22,6 +25,16 @@ const operationAliases = {
   division: "/",
   divide: "/",
   "/": "/",
+  modulo: "%",
+  mod: "%",
+  "%": "%",
+  power: "^",
+  exponentiation: "^",
+  pow: "^",
+  "^": "^",
+  squareroot: "sqrt",
+  squareRoot: "sqrt",
+  sqrt: "sqrt",
 };
 
 function addition(left, right) {
@@ -44,12 +57,32 @@ function division(left, right) {
   return left / right;
 }
 
+function modulo(left, right) {
+  if (right === 0) {
+    throw new Error("Modulo by zero is not allowed.");
+  }
+
+  return left % right;
+}
+
+function power(base, exponent) {
+  return base ** exponent;
+}
+
+function squareRoot(value) {
+  if (value < 0) {
+    throw new Error("Square root of a negative number is not allowed.");
+  }
+
+  return Math.sqrt(value);
+}
+
 function calculate(operationInput, left, right) {
   const operation = operationAliases[operationInput];
 
   if (!operation) {
     throw new Error(
-      `Invalid operation: "${operationInput}". Use addition, subtraction, multiplication, division, or +, -, *, /.`
+      `Invalid operation: "${operationInput}". Use addition, subtraction, multiplication, division, modulo, power, squareRoot, or +, -, *, /, %, ^, sqrt.`
     );
   }
 
@@ -62,44 +95,58 @@ function calculate(operationInput, left, right) {
       return multiplication(left, right);
     case "/":
       return division(left, right);
+    case "%":
+      return modulo(left, right);
+    case "^":
+      return power(left, right);
+    case "sqrt":
+      return squareRoot(left);
     default:
       throw new Error("Unexpected operation.");
   }
 }
 
 function runCli(argv) {
-  const [, , operationInput, leftInput, rightInput] = argv;
+  const [, , operationInput, firstOperandInput, secondOperandInput] = argv;
   const operation = operationAliases[operationInput];
+  const isUnaryOperation = operation === "sqrt";
 
-  if (!operationInput || leftInput === undefined || rightInput === undefined) {
-    console.error("Usage: node src/calculator.js <operation> <number1> <number2>");
-    console.error("Operations: addition|subtraction|multiplication|division or +|-|*|/");
-    return 1;
-  }
-
-  const left = Number(leftInput);
-  const right = Number(rightInput);
-
-  if (Number.isNaN(left) || Number.isNaN(right)) {
-    console.error("Invalid input: operands must be valid numbers.");
+  if (!operationInput || firstOperandInput === undefined) {
+    console.error("Usage: node src/calculator.js <operation> <number1> [number2]");
+    console.error(
+      "Operations: addition|subtraction|multiplication|division|modulo|power|squareRoot or +|-|*|/|%|^|sqrt"
+    );
     return 1;
   }
 
   if (!operation) {
     console.error(
-      `Invalid operation: "${operationInput}". Use addition, subtraction, multiplication, division, or +, -, *, /.`
+      `Invalid operation: "${operationInput}". Use addition, subtraction, multiplication, division, modulo, power, squareRoot, or +, -, *, /, %, ^, sqrt.`
     );
     return 1;
   }
 
-  if (operation === "/" && right === 0) {
-    console.error("Division by zero is not allowed.");
+  if (!isUnaryOperation && secondOperandInput === undefined) {
+    console.error(`Operation "${operationInput}" requires two numeric operands.`);
     return 1;
   }
 
-  const result = calculate(operationInput, left, right);
-  console.log(result);
-  return 0;
+  const left = Number(firstOperandInput);
+  const right = secondOperandInput === undefined ? undefined : Number(secondOperandInput);
+
+  if (Number.isNaN(left) || (!isUnaryOperation && Number.isNaN(right))) {
+    console.error("Invalid input: operands must be valid numbers.");
+    return 1;
+  }
+
+  try {
+    const result = calculate(operationInput, left, right);
+    console.log(result);
+    return 0;
+  } catch (error) {
+    console.error(error.message);
+    return 1;
+  }
 }
 
 module.exports = {
@@ -107,6 +154,9 @@ module.exports = {
   subtraction,
   multiplication,
   division,
+  modulo,
+  power,
+  squareRoot,
   calculate,
   runCli,
 };
